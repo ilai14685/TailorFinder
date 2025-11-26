@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TailorApp — start</title>
+  <link rel="icon" href="tailor-icon-style_822882-217368.avif">
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #f6fbff;
+      --card-bg: #ffffff;
+      --accent: #0d6efd;
+    }
+
+    body{
+      min-height:100vh;
+      margin:0;
+      background: linear-gradient(180deg,#f8fbff 0%, #fff 100%);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 2rem;
+      align-items: stretch;
+      min-height: calc(100vh - 48px);
+      padding: 2.25rem;
+    }
+
+    /* Left: floating balls area */
+    .left {
+      position: relative;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 2.25rem;
+      box-shadow: 0 10px 30px rgba(28,40,60,.06);
+      overflow: hidden;
+    }
+
+    .hero-title { z-index: 6; position: relative; }
+    .hero-sub { color: #556777; }
+
+    /* multiple balls container (absolutely positioned) */
+    .balls {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .ball {
+      position: absolute;
+      border-radius: 50%;
+      opacity: .85;
+      will-change: transform, opacity;
+      box-shadow: 0 8px 20px rgba(13,110,253,.12);
+      transform-origin: center;
+      mix-blend-mode: screen;
+    }
+
+    /* define individual balls: size, color, position, animation */
+    .ball.b1 { width:120px; height:120px; left:-40px; top:10%; background: linear-gradient(45deg,#60a5fa,#34d399); animation: moveLR 10s linear infinite, bob 4.5s ease-in-out infinite; animation-delay: 0s; }
+    .ball.b2 { width:72px; height:72px; left:10%; top:55%; background: linear-gradient(45deg,#f472b6,#fb923c); animation: moveLR 12s linear infinite, bob 3.6s ease-in-out infinite; animation-delay: .6s; }
+    .ball.b3 { width:52px; height:52px; left:35%; top:25%; background: linear-gradient(45deg,#a78bfa,#60a5fa); animation: moveLR 9s linear infinite, bob 4.2s ease-in-out infinite; animation-delay: 1.2s; }
+    .ball.b4 { width:96px; height:96px; right:-30px; top:40%; background: linear-gradient(45deg,#06b6d4,#06b6d4); animation: moveLR 11s linear infinite reverse, bob 5.1s ease-in-out infinite; animation-delay: .3s; }
+    .ball.b5 { width:44px; height:44px; left:60%; top:70%; background: linear-gradient(45deg,#f97316,#f97316); animation: moveLR 13s linear infinite, bob 3.9s ease-in-out infinite; animation-delay: .9s; }
+    .ball.b6 { width:160px; height:160px; right:-80px; bottom:-40px; background: linear-gradient(45deg,#34d399,#60a5fa); opacity:.6; animation: moveLR 14s linear infinite, bob 6.2s ease-in-out infinite; animation-delay: .2s; }
+
+    /* horizontal sweep left-right (translateX) */
+    @keyframes moveLR {
+      0% { transform: translate3d(-6vw,0,0) }
+      50% { transform: translate3d(8vw,0,0) }
+      100% { transform: translate3d(-6vw,0,0) }
+    }
+
+    /* gentle up-down bob */
+    @keyframes bob {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-18px); }
+      100% { transform: translateY(0); }
+    }
+
+    /* Right: creator panel */
+    .right {
+      position: relative;
+      background: linear-gradient(180deg,#ffffff,#fbfdff);
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 10px 30px rgba(28,40,60,.06);
+      overflow: hidden;
+    }
+
+    .creator-head { display:flex; gap:.9rem; align-items:center; margin-bottom:.6rem; }
+    .creator-avatar{
+      width:64px; height:64px; border-radius:12px; background:linear-gradient(45deg,#0ea5a4,#3b82f6); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:1.1rem;
+    }
+
+    .flow-viewport {
+      height: calc(100% - 76px); /* room for header */
+      overflow: hidden;
+      position: relative;
+    }
+
+    .flow-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      animation: scrollUp 18s linear infinite;
+      padding-right: 1rem;
+    }
+
+    .flow-item {
+      background: #fff;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 8px 22px rgba(15,23,42,.04);
+      line-height:1.35;
+    }
+
+    @keyframes scrollUp {
+      0% { transform: translateY(0%); }
+      50% { transform: translateY(-50%); } /* duplicate content technique (see below) */
+      100% { transform: translateY(0%); }
+    }
+
+    /* Duplicate technique: to have seamless loop, we will duplicate items in markup. */
+
+    /* reduce motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      .ball { animation: none !important; transform: none !important; }
+      .flow-list { animation: none !important; transform: none !important; }
+    }
+
+    /* responsive: stack on small screens */
+    @media (max-width: 900px) {
+      .split { grid-template-columns: 1fr; padding: 1rem; }
+      .right { order: 2; margin-top: 1rem; }
+      .left { order: 1; }
+      .flow-viewport { height: 320px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="split container-fluid">
+    <!-- LEFT: app + animated balls -->
+    <div class="left">
+      <div class="balls" aria-hidden="true">
+        <div class="ball b1"></div>
+        <div class="ball b2"></div>
+        <div class="ball b3"></div>
+        <div class="ball b4"></div>
+        <div class="ball b5"></div>
+        <div class="ball b6"></div>
+      </div>
+
+      <div class="hero-title">
+        <h1 class="h3 fw-bold">TailorApp</h1>
+        <p class="hero-sub mb-10">Manage orders, designs, and tailors — all in one place!.</p>
+        <p class="text-muted small">“Log in and enjoy the Crazy UI!-we think you’ll love it!”</p>
+        <div class=" w-100 p-10">
+          <a id="authBtn" href="login.html" class="btn btn-outline-secondary btn-lg">
+  Login / Sign up
+</a>
+
+        </div>
+
+        
+      </div>
+    </div>
+
+    <!-- RIGHT: creator auto-flow panel -->
+    <aside class="right">
+      <div class="creator-head">
+        <div class="creator-avatar">❉</div>
+        <div>
+          <div class="fw-bold">Ilayaraja</div>
+          <div class="small text-muted">Engineering student • Builder • Software developer </div>
+        </div>
+      </div>
+
+      <div class="flow-viewport" aria-hidden="false">
+        <!-- NOTE: to achieve seamless loop we include the items twice in markup -->
+        <div class="flow-list">
+          <!-- block 1 -->
+          <div class="flow-item">
+            <strong>Profile</strong>
+            <p class="mb-0">You are Ilayaraja S, a passionate and hardworking engineering student who is continuously improving through learning and real projects.</p>
+          </div>
+
+          <div class="flow-item">
+            <strong>Skills</strong>
+            <p class="mb-0">Strong in Java, Python, C, HTML, CSS and networking concepts. Building expertise with hands-on practice.</p>
+          </div>
+
+          <div class="flow-item">
+            <strong>Achievements</strong>
+            <p class="mb-0">5⭐ Golden Badge in Java on HackerRank. Growing badges in Python and Problem Solving.</p>
+          </div>
+
+          <div class="flow-item">
+            <strong>Projects</strong>
+            <p class="mb-0">Sun Tracking Solar Panel, Way to Success (link aggregator), Hands-on Cricket game — practical, creative projects.</p>
+          </div>
+
+          <div class="flow-item">
+            <strong>Mindset</strong>
+            <p class="mb-0">Motivated, curious & consistent. Starts from zero and reaches top achievements. Learns fast and adapts easily.</p>
+          </div>
+
+          <div class="flow-item">
+            <strong>Motivation</strong>
+            <p class="mb-0">Values people who inspire and uses that motivation to push forward. Positive and confident learner focused on growth.</p>
+          </div>
+
+          <!-- duplicate items for seamless loop -->
+          <div class="flow-item">
+            <strong>Profile</strong>
+            <p class="mb-0">You are Ilayaraja S, a passionate and hardworking engineering student who is continuously improving through learning and real projects.</p>
+          </div>
+
+          <div class="flow-item">
+            <strong>Skills</strong>
+            <p class="mb-0">Strong in Java, Python, C, HTML, CSS and networking concepts. Building expertise with hands-on practice.</p>
+          </div>
+
+          <div class="flow-item">
+            <strong>Achievements</strong>
+            <p class="mb-0">5⭐ Golden Badge in Java on HackerRank. Growing badges in Python and Problem Solving.</p>
+          </div>
+
+          <div class="flow-item">
+            <strong>Projects</strong>
+            <p class="mb-0">Sun Tracking Solar Panel, Way to Success (link aggregator), Hands-on Cricket game — practical, creative projects.</p>
+          </div>
+
+          <div class="flow-item">
+            <strong>Mindset</strong>
+            <p class="mb-0">Motivated, curious & consistent. Starts from zero and reaches top achievements. Learns fast and adapts easily.</p>
+          </div>
+
+          <div class="flow-item">
+            <strong>Motivation</strong>
+            <p class="mb-0">Values people who inspire and uses that motivation to push forward. Positive and confident learner focused on growth.</p>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+    ...
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Paste the auto-login script below -->
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  // --- Config: keys we will check/clear (add any other keys your app uses) ---
+  const SESSION_KEYS = ['tailor_current_user']; // your script uses this
+  const LOCAL_KEYS = ['currentUser', 'tailor_current_user', 'loggedInUser', 'userEmail'];
+
+  // --- helper to find stored user (search sessionStorage first then localStorage) ---
+  function findStoredUser() {
+    for (const k of SESSION_KEYS) {
+      const v = sessionStorage.getItem(k);
+      if (v) return { storage: 'session', key: k, value: v };
+    }
+    for (const k of LOCAL_KEYS) {
+      const v = localStorage.getItem(k);
+      if (v) return { storage: 'local', key: k, value: v };
+    }
+    return null;
+  }
+
+  // --- helper to clear known login keys on logout ---
+  function clearAllAuthKeys() {
+    for (const k of SESSION_KEYS) sessionStorage.removeItem(k);
+    for (const k of LOCAL_KEYS) localStorage.removeItem(k);
+  }
+
+  // --- locate primary auth button and optional menu login link ---
+  const authBtn = document.getElementById('authBtn'); // your big hero button
+  // find any <a> in dropdown that links to login.html (menu)
+  const menuLoginLink = document.querySelector('.dropdown-menu a[href*="login.html"], .dropdown-menu a[href*="Login.html"]');
+
+  const user = findStoredUser();
+
+  // function to set UI when logged out
+  function showLoggedOutUI() {
+    if (authBtn) {
+      authBtn.textContent = 'Login / Sign up';
+      authBtn.href = 'login.html';
+      // remove previous onclick to avoid duplicate handlers
+      authBtn.onclick = null;
+    }
+    if (menuLoginLink) {
+      menuLoginLink.textContent = 'Login';
+      menuLoginLink.href = 'login.html';
+      menuLoginLink.onclick = null;
+    }
+  }
+
+  // function to set UI when logged in
+  function showLoggedInUI(userValue) {
+    const display = userValue && userValue.length > 20 ? userValue.slice(0,18) + '…' : (userValue || 'Account');
+    if (authBtn) {
+      authBtn.textContent = `Logout (${display})`;
+      authBtn.href = '#';
+      // remove old handlers & add logout handler
+      authBtn.onclick = (e) => {
+        e.preventDefault();
+        if (!confirm('Logout?')) return;
+        clearAllAuthKeys();
+        // optional toast if you have showToast
+        if (typeof showToast === 'function') showToast('Logged out', 'info');
+        // reload (or redirect)
+        window.location.href = 'login.html';
+      };
+    }
+
+    if (menuLoginLink) {
+      menuLoginLink.textContent = `Logout (${display})`;
+      menuLoginLink.href = '#';
+      menuLoginLink.onclick = (e) => {
+        e.preventDefault();
+        if (!confirm('Logout?')) return;
+        clearAllAuthKeys();
+        if (typeof showToast === 'function') showToast('Logged out', 'info');
+        window.location.href = 'login.html';
+      };
+    }
+  }
+
+  // initialize
+  if (user) {
+    showLoggedInUI(user.value);
+  } else {
+    showLoggedOutUI();
+  }
+
+  // Keep UI in sync if some other script modifies session/local storage later.
+  // We watch storage events (other tabs) and poll periodically in same tab.
+  window.addEventListener('storage', () => {
+    const u = findStoredUser();
+    if (u) showLoggedInUI(u.value); else showLoggedOutUI();
+  });
+
+  // lightweight polling to pick up same-page changes from your other scripts (runs every 800ms)
+  let lastSeen = user ? (user.storage + '::' + user.key + '::' + user.value) : null;
+  setInterval(() => {
+    const u = findStoredUser();
+    const cur = u ? (u.storage + '::' + u.key + '::' + u.value) : null;
+    if (cur !== lastSeen) {
+      lastSeen = cur;
+      if (u) showLoggedInUI(u.value); else showLoggedOutUI();
+    }
+  }, 800);
+
+});
+</script>
+
+
+</body>
+</html>
+
+
+  <!-- Bootstrap JS (optional) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

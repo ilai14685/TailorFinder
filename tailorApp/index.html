@@ -1,0 +1,216 @@
+  <!doctype html>
+  <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TailorApp — Second page</title>
+    <link rel="icon" href="tailor-icon-style_822882-217368.avif">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body class="bg-soft">
+
+    <nav class="navbar navbar-white bg-white shadow-sm py-2 animated-fadeIn">
+      <div class="container d-flex align-items-center gap-3">
+        <div class="dropdown">
+  <button class="btn btn-light fs-4 border-0" type="button" id="menuButton" data-bs-toggle="dropdown">
+    ☰
+  </button>
+
+  <ul class="dropdown-menu" id="menuList">
+    <!-- Filled by script automatically -->
+  </ul>
+</div>
+
+        <a class="navbar-brand fw-bold me-2" href="main.html">TailorApp</a>
+        <!-- Customer search (placed in navbar for easy access on mobile) -->
+        <div class="flex-fill">
+          <div class="input-group">
+            <input id="indexSearch" type="search" class=" form-control form-control-sm3-" placeholder="Search tailors by name, email or place... " aria-label="Search tailors">
+            <button class="form-control-sm" type="button" onclick="document.getElementById('indexSearch').focus();">
+              🔎
+            </button>
+          </div>
+        </div>
+        
+
+        <div class="ms-auto d-flex gap-2">
+          <a class="btn btn-outline-secondary btn-sm-2 " href="order.html">Place Order</a>
+          <a class="btn btn-primary" href="owner.html">Owner Dashboard</a>
+          
+        </div>
+      </div>
+    </nav>
+
+    <main class="container py-4">
+      <div class="row mb-3 text-center">
+        <div class="col-12">
+          <h1 class="mb-1 animated-pop">Welcome to TailorApp</h1>
+          <p class="text-muted">Find tailors nearby or by name — pick an owner and place an order.</p>
+        </div>
+      </div>
+
+      <!-- Owners List -->
+      <section class="mb-4">
+        <h4 class="mb-3">Our Owners</h4>
+
+        <!-- optional helper text when search is used -->
+        <div id="ownersHelp" class="mb-2 text-muted small">Use the search box above to quickly find a tailor by name, email or place.</div>
+
+        <div class="row g-3" id="ownersList">
+          <!-- owner cards injected by script.js -->
+           
+        </div>
+        <!-- Paste this script near end of your script.js or inside owner.html -->
+<script>
+/* Render owner designs on order.html and enable modal preview.
+   Paste this inside order.html (after script.js and bootstrap.bundle). */
+(function(){
+  // safe helper to read designs if your main script provides loadDesigns()
+  function getAllDesigns() {
+    if (typeof loadDesigns === 'function') {
+      try { return loadDesigns() || []; } catch(e) {}
+    }
+    // fallback: try direct localStorage key used by your app
+    try {
+      const raw = localStorage.getItem('tailorDesigns_v1');
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch(e){ return []; }
+  }
+
+  function escapeHtml(s=''){ return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  // ensure a bootstrap modal exists for preview
+  function ensurePreviewModal() {
+    if (document.getElementById('designPreviewModal')) return;
+    const html = `
+      <div class="modal fade" id="designPreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 id="designPreviewTitle" class="modal-title"></h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div id="designPreviewBody" class="modal-body text-center" style="min-height:180px"></div>
+          </div>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+  }
+
+  function openPreview(type, src, title) {
+    ensurePreviewModal();
+    const modalEl = document.getElementById('designPreviewModal');
+    const body = document.getElementById('designPreviewBody');
+    const titleEl = document.getElementById('designPreviewTitle');
+    if (!body || !modalEl) { window.open(src, '_blank'); return; }
+    titleEl.textContent = title || '';
+    body.innerHTML = '';
+    if ((type||'').toLowerCase()==='video') {
+      const v = document.createElement('video');
+      v.src = src; v.controls = true; v.autoplay = true;
+      v.style.maxWidth = '100%'; v.style.maxHeight = '70vh';
+      body.appendChild(v);
+    } else {
+      const img = document.createElement('img');
+      img.src = src; img.alt = title || '';
+      img.style.maxWidth = '100%'; img.style.maxHeight = '80vh';
+      img.loading = 'lazy';
+      body.appendChild(img);
+    }
+    try { const m = new bootstrap.Modal(modalEl, { keyboard:true }); m.show(); } catch(e){ window.open(src,'_blank'); }
+  }
+
+  // render thumbnails grid into #ownerAllDesigns for given email
+  function renderDesignsForOwner(ownerEmail, containerId='ownerAllDesigns') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const all = getAllDesigns();
+    const list = all.filter(d => (d.owner||'').toLowerCase() === (ownerEmail||'').toLowerCase());
+    if (!list.length) {
+      container.innerHTML = `<div class="text-muted small">No designs available.</div>`;
+      return;
+    }
+    const html = list.map(d => {
+      const title = escapeHtml(d.title||'');
+      const type = (d.type||'image').toLowerCase();
+      const src = escapeHtml(d.data||'');
+      if (type==='video') {
+        return `<div class="d-inline-block me-2 mb-2">
+                  <div class="owner-design-thumb position-relative" data-preview-type="video" data-preview-src="${src}" data-preview-title="${title}" style="width:140px;height:100px;cursor:pointer;border-radius:6px;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center;color:#fff">▶</div>
+                </div>`;
+      }
+      return `<div class="d-inline-block me-2 mb-2">
+                <img class="owner-design-thumb img-thumbnail" src="${src}" alt="${title}" data-preview-type="image" data-preview-src="${src}" data-preview-title="${title}" style="width:140px;height:100px;object-fit:cover;cursor:pointer;border-radius:6px" />
+              </div>`;
+    }).join('');
+    container.innerHTML = html;
+  }
+
+  // delegated click handler for preview
+  function bindPreviewClicks() {
+    const container = document.getElementById('ownerAllDesigns') || document;
+    container.addEventListener('click', (ev) => {
+      const thumb = ev.target.closest && ev.target.closest('.owner-design-thumb');
+      if (!thumb) return;
+      ev.preventDefault();
+      const type = thumb.dataset?.previewType || thumb.getAttribute('data-preview-type') || (thumb.tagName==='IMG' ? 'image' : 'image');
+      const src = thumb.dataset?.previewSrc || thumb.getAttribute('data-preview-src') || thumb.src || (thumb.querySelector && (thumb.querySelector('img')?.src || '')) || '';
+      const title = thumb.dataset?.previewTitle || thumb.getAttribute('data-preview-title') || thumb.alt || '';
+      if (!src) return;
+      openPreview(type, src, title);
+    }, { passive:true });
+  }
+
+  // utility to read owner param and init
+  function initAutoRender() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const ownerParam = params.get('owner');
+      if (!ownerParam) return;
+      const ownerEmail = decodeURIComponent(ownerParam);
+      // render when DOM ready
+      document.addEventListener('DOMContentLoaded', () => {
+        renderDesignsForOwner(ownerEmail, 'ownerAllDesigns');
+      });
+    } catch(e){}
+  }
+
+  // init
+  if (document.readyState !== 'loading') {
+    bindPreviewClicks();
+    initAutoRender();
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      bindPreviewClicks();
+      initAutoRender();
+    });
+  }
+
+  // export small API
+  window.renderDesignsForOwner = renderDesignsForOwner;
+  window.openDesignPreview = openPreview;
+
+})();
+</script>
+
+
+      </section>
+     
+      
+    </main>
+
+    <!-- Bootstrap JS bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- App script -->
+    <script src="script.js"></script>
+  </body>
+  </html>
+  

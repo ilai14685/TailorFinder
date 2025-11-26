@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login — TailorApp</title>
+  <link rel="icon" href="tailor-icon-style_822882-217368.avif">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-soft">
+
+<nav class="navbar navbar-white bg-white shadow-sm py-2 animated-fadeIn">
+  <div class="container d-flex align-items-center gap-3">
+     <div class="dropdown">
+  <button class="btn btn-light fs-4 border-0" type="button" id="menuButton" data-bs-toggle="dropdown">
+    ☰
+  </button>
+
+  <ul class="dropdown-menu" id="menuList">
+    <!-- Filled by script automatically -->
+  </ul>
+</div>
+    <a class="navbar-brand fw-bold me-2" href="main.html">TailorApp</a>
+    <div class="ms-auto">
+      <a class="btn btn-outline-secondary" href="index.html">Home</a>
+    </div>
+  </div>
+</nav>
+
+<main class="container my-4">
+  <div class="row gy-4">
+    <!-- Left: auth -->
+    
+
+    <div class="d-flex justify-content-center align-items-center vh-10 bg-light">
+      <div class="card shadow p-4" style="width: 22rem;">
+        <div class="card-body">
+          <h5 id="authTitle">Owner Login</h5>
+
+          <!-- LOGIN FORM -->
+           
+          <form id="loginForm">
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input id="loginEmail" class="form-control" type="email" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input id="loginPass" class="form-control" type="password" required>
+            </div>
+
+            <div class="mb-2 d-flex justify-content-between align-items-center">
+              <div></div>
+              <button class="btn btn-primary w-100" type="submit">Login</button>
+            </div>
+
+            <small class="text-muted d-block mt-2">No account? <a href="C:\Users\ilayraja\OneDrive\Desktop\tailorApp\signup.html" id="showSignup">Create here</a></small>
+          </form>
+
+          <!-- SIGNUP FORM (hidden initially) -->
+          <form id="signupForm" class="d-none">
+            <div class="mb-2">
+              <label class="form-label">Name</label>
+              <input id="signupName" class="form-control" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Email</label>
+              <input id="signupEmail" class="form-control" type="email" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Password</label>
+              <input id="signupPass" class="form-control" type="password" required>
+            </div>
+            <div class="mb-2"> 
+              <label  class="form-label">Place</label>
+              <input id="signupPlace" type="text" class="form-control" required>
+            </div>
+            <div class="mb-2">
+              <label  class="form-label">Phone number</label>
+              <input id="signupPhone" type="number" class="form-control" required>
+            </div>
+            
+            <div class="d-grid gap-2">
+              <button class="btn btn-success" type="submit">Create Account</button>
+              <button class="btn btn-link text-decoration-none" type="button" id="backToLogin">Back to Login</button>
+            </div>
+            <small class="text-muted d-block mt-2">Already have account? <a href="#" id="goLogin">Login</a></small>
+          </form>
+
+          <div id="authMsg" class="mt-2"></div>
+        </div>
+      </div>
+    </div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- App script -->
+<script src="script.js"></script>
+</body>
+</html>
+

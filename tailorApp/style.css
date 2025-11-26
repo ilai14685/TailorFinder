@@ -1,0 +1,177 @@
+/* style.css - include with your project (animations for design cards) */
+
+/* Base */
+:root{
+  --soft-bg: #f6f8fb;
+  --card-bg: #ffffff;
+  --accent: #0a5ad9;
+}
+body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--soft-bg); margin: 0; color:#222; }
+.bg-soft { background: linear-gradient(180deg, #f7f9fc 0%, #f3f6fb 100%); }
+.card { border: none; border-radius: 12px; }
+
+/* Designs gallery cards (small, boxy, animated) */
+.designs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+.design-card {
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(20,20,40,0.06);
+  border: 1px solid rgba(0,0,0,0.04);
+  transition: transform .22s cubic-bezier(.2,.9,.3,1), box-shadow .22s, filter .2s;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  min-height: 160px;
+}
+
+/* small image/video preview area */
+.design-thumb {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+  background: linear-gradient(180deg,#f8f9fb,#ffffff);
+}
+
+/* card info row with title and delete button */
+.design-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  gap: 8px;
+}
+
+/* hover / focus - lift */
+.design-card:hover,
+.design-card:focus {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 0 22px 48px rgba(10,10,30,0.12);
+  filter: saturate(1.03);
+}
+
+/* active touch feedback */
+.design-card:active {
+  transform: scale(0.995);
+}
+
+/* small title */
+.design-title { font-size: .88rem; color:#222; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* small delete button */
+.design-delete { font-size: .75rem; }
+
+/* modal preview styles */
+#designPreviewBody img, #designPreviewBody video {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+}
+
+/* responsive tweaks */
+@media (max-width: 576px) {
+  .design-thumb { height: 100px; }
+  .design-card { min-height: 120px; }
+}
+/* Zoom effect only for owner cards on index page */
+#ownersList .card {
+  transition: transform 220ms cubic-bezier(.2,.9,.3,1), box-shadow 220ms ease;
+  will-change: transform;
+  transform-origin: center center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  touch-action: manipulation;
+  
+}
+
+/* Hover / focus / active (mouse, keyboard, touch) */
+#ownersList .card:hover,
+#ownersList .card:focus,
+#ownersList .card:focus-visible,
+#ownersList .card:active {
+  transform: translateZ(0) scale(1.05);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+  z-index: 2;
+}
+
+/* Prevent inner buttons from inheriting transform */
+#ownersList .card .btn {
+  transform: none;
+  transition: none;
+}
+
+/* Remove tap highlight on mobile */
+#ownersList .card, #ownersList .card * {
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+/* Keyboard focus ring */
+#ownersList .card:focus-visible {
+  outline: 3px solid rgba(9,132,227,0.16);
+  outline-offset: 6px;
+}
+
+/* Optional: apply scale only on touch devices (no hover on desktop) */
+@media (hover: none) and (pointer: coarse) {
+  #ownersList .card:hover { transform: none; } /* ignore desktop hover */
+  #ownersList .card:active { transform: translateZ(0) scale(1.05); }
+}
+.row
+{
+  display: flex;
+  flex-direction: row;
+}
+#menuButton {
+  transition: transform 0.2s ease;
+}
+
+#menuButton:hover {
+  transform: rotate(90deg);
+}
+/* improved float blobs: transform-only, subtle */
+.float-blob{
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: .28;            /* softer */
+  will-change: transform;
+  transform-origin: center;
+  transition: opacity .3s ease;
+}
+
+/* blob base sizes/positions */
+.blob-1{ width: 220px; height: 220px; left:-90px; top:-60px; background: linear-gradient(135deg,#60a5fa 0%, #38bdf8 100%); }
+.blob-2{ width: 150px; height: 150px; right:-60px; top:20px; background: linear-gradient(135deg,#34d399 0%, #60a5fa 100%); }
+.blob-3{ width: 110px; height: 110px; left:20%; bottom:-48px; background: linear-gradient(135deg,#7c3aed 0%, #06b6d4 100%); }
+
+/* subtle, long-duration transform-only keyframes */
+@keyframes floatSmoothA {
+  0%   { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
+  25%  { transform: translate3d(12px,-10px,0) rotate(4deg) scale(1.02); }
+  50%  { transform: translate3d(0,-20px,0) rotate(-3deg) scale(1); }
+  75%  { transform: translate3d(-10px,-6px,0) rotate(2deg) scale(.99); }
+  100% { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
+}
+@keyframes floatSmoothB {
+  0%   { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
+  33%  { transform: translate3d(-14px,-8px,0) rotate(-5deg) scale(1.01); }
+  66%  { transform: translate3d(6px,-18px,0) rotate(3deg) scale(.995); }
+  100% { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
+}
+
+/* apply animations with gentle easing */
+.blob-1{ animation: floatSmoothA 12s cubic-bezier(.22,.9,.3,1) infinite; }
+.blob-2{ animation: floatSmoothB 14s cubic-bezier(.22,.9,.3,1) infinite; }
+.blob-3{ animation: floatSmoothA 11.5s cubic-bezier(.22,.9,.3,1) infinite; }
+
+/* pause on hover to avoid distraction */
+.hero:hover .float-blob { animation-play-state: paused; opacity: .36; }
+
+/* respects reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .float-blob { animation: none !important; transform: none !important; opacity: .18 !important; }
+}
+
+

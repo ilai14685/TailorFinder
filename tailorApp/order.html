@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Place Order — TailorApp</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-soft">
+
+<nav class="navbar navbar-white bg-white shadow-sm py-2 animated-fadeIn">
+  <div class="container">
+    <div class="dropdown">
+      <button class="btn btn-light fs-4 border-0" type="button" id="menuButton" data-bs-toggle="dropdown" aria-expanded="false">
+        ☰
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="menuButton">
+        <li><a class="dropdown-item" href="login.html">Login</a></li>
+      </ul>
+    </div>
+    <a class="navbar-brand fw-bold ms-2" href="index.html">TailorApp</a>
+    <div class="ms-auto">
+      <a class="btn btn-outline-secondary" href="index.html">Home</a>
+       <a class="btn btn-primary ms-2" href="owner.html">Owner Dashboard</a>
+    </div>
+  </div>
+</nav>
+
+<main class="container my-4">
+  <div class="card mx-auto shadow-sm animated-pop" style="max-width:900px;">
+    <div class="card-body">
+      <h4 class="mb-3">Place an Order</h4>
+
+      <form id="orderForm" novalidate>
+        <div class="mb-3">
+          <label class="form-label">Select Owner</label>
+          <select id="ownerSelect" class="form-select" required></select>
+          <div class="invalid-feedback">Please select an owner.</div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" >Customer Name</label>
+            <input type="text" id="custName" class="form-control" required>
+            <div class="invalid-feedback">Name (min 2 characters)</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Phone</label>
+            <input type="number" id="custPhone" class="form-control" placeholder="10 digit" required>
+            <div class="invalid-feedback">Valid 10-digit phone</div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Delivery Address</label>
+            <textarea id="custAddress" class="form-control" rows="2" required></textarea>
+            <div class="invalid-feedback">Enter address</div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Dress Type</label>
+            <select id="dressType" class="form-select" required>
+              <option value="">Choose...</option>
+              <option>Kurta</option>
+              <option>Shirt</option>
+              <option>Pants</option>
+              <option>Lehenga</option>
+              <option>Saree Blouse</option>
+              <option>alter the Dress</option>
+            </select>
+            <div class="invalid-feedback">Choose type</div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Size</label>
+            <select id="size" class="form-select" required>
+              <option value="">Size</option>
+              <option>S</option><option>M</option><option>L</option><option>XL</option><option>Custom</option>
+            </select>
+            <div class="invalid-feedback">Choose size</div>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label">Quantity</label>
+            <input id="qty" type="number" class="form-control" min="1" value="1" required>
+            <div class="invalid-feedback">Min 1</div>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label">Delivery Date</label>
+            <input id="deliveryDate" type="date" class="form-control" required>
+            <div class="invalid-feedback">Pick date</div>
+          </div>
+
+          <div class="col-12 d-flex gap-2">
+            <button class="btn btn-success btn-animated" type="submit">Place Order</button>
+            <button class="btn btn-outline-secondary" type="reset">Reset</button>
+            <div id="orderMsg" class="ms-auto align-self-center"></div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- App script -->
+<script src="script.js"></script>
+</body>
+</html>

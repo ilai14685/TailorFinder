@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rate Tailor</title>
+    <link rel="icon" href="tailor-icon-style_822882-217368.avif">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container py-4">
+    
+        
+    
+
+    <h3 class="mb-3">Rate Your Tailor</h3>
+
+    <div id="ownerName" class="mb-3 fw-bold"></div>
+
+    <label class="form-label">Select Rating:</label>
+    <select id="rating" class="form-select mb-3">
+        <option value="1">⭐ 1 - Poor</option>
+        <option value="2">⭐⭐ 2 - Fair</option>
+        <option value="3">⭐⭐⭐ 3 - Good</option>
+        <option value="4">⭐⭐⭐⭐ 4 - Very Good</option>
+        <option value="5">⭐⭐⭐⭐⭐ 5 - Excellent</option>
+    </select>
+
+    <label class="form-label">Opinion (optional):</label>
+    <textarea id="opinion" class="form-control mb-3" rows="4"></textarea>
+
+    <button class="btn btn-primary w-100" onclick="saveRating()">Submit Rating</button>
+
+    <div id="message" class="mt-3"></div>
+
+<script>
+/*
+  Single-file rating engine + rating.html connector
+  - Stores rich rating entries under 'tailorOwnerRatings_v1'
+  - Injects/updates owner cards if present (uses [data-owner-email] on cards)
+  - Implements global saveRating() used by your Submit button
+*/
+(function () {
+  if (window.__tailor_ratings_loaded) return; // avoid double-load
+  window.__tailor_ratings_loaded = true;
+
+  const OWNER_RATINGS_KEY = 'tailorOwnerRatings_v1';
+  const OPINIONS_KEY = 'tailorOwnerOpinions_v1';
+  const USERS_KEYS = ['tailorUsers_v1', 'ownersList', 'tailor_users', 'users'];
+
+  // safe JSON parse
+  function safeParse(s){ try { return JSON.parse(s); } catch(e) { return null; } }
+  function saveJson(key, v){ try { localStorage.setItem(key, JSON.stringify(v)); } catch(e){ console.error('saveJson failed', e); } }
+  function loadJson(key){ try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : null; } catch(e){ return null; } }
+
+  // users helpers
+  function loadUsersFromStorage() {
+    for (const k of USERS_KEYS) {
+      const raw = localStorage.getItem(k);
+      if (!raw) continue;
+      const parsed = safeParse(raw);
+      if (Array.isArray(parsed)) return { key: k, users: parsed };
+    }
+    return { key: USERS_KEYS[0], users: [] };
+  }
+  function saveUsersToStorage(key, users) { saveJson(key, users); }
+
+  // ratings map: ownerEmail -> array of {rating, opinion?, at}
+  function loadOwnerRatingsMap() { return loadJson(OWNER_RATINGS_KEY) || {}; }
+  function saveOwnerRatingsMap(m){ saveJson(OWNER_RATINGS_KEY, m || {}); }
+
+  // add rating (rich object). returns meta {avg,count,sum}
+  function addRatingForOwnerEmail(ownerEmail, rating, opinion = '') {
+    if (!ownerEmail) return false;
+    const r = Math.round(Number(rating));
+    if (!isFinite(r) || r < 1 || r > 5) return false;
+    const map = loadOwnerRatingsMap();
+    if (!Array.isArray(map[ownerEmail])) map[ownerEmail] = [];
+    map[ownerEmail].push({ rating: r, opinion: String(opinion||''), at: new Date().toISOString() });
+    saveOwnerRatingsMap(map);
+    return getRatingMeta(ownerEmail);
+  }
+
+  // compute meta (backwards-compatible: supports numeric arrays too)
+  function getRatingMeta(ownerEmail) {
+    const map = loadOwnerRatingsMap();
+    const arr = Array.isArray(map[ownerEmail]) ? map[ownerEmail] : [];
+    let count = 0, sum = 0;
+    for (const it of arr) {
+      if (it == null) continue;
+      if (typeof it === 'number') { sum += Number(it); count++; }
+      else if (typeof it === 'object' && isFinite(it.rating)) { sum += Number(it.rating); count++; }
+      else if (isFinite(it)) { sum += Number(it); count++; }
+    }
+    const avg = count ? Math.round((sum / count) * 10) / 10 : 0;
+    return { avg, count, sum };
+  }
+
+  // DOM helpers
+  function escapeHtml(s=''){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  // build star UI
+  function buildStarsHtml(avg, interactive=true, ownerEmail='') {
+    const rounded = Math.round(avg||0);
+    let html = '<div class="owner-rating d-flex align-items-center" style="gap:6px;">';
+    for (let i=1;i<=5;i++){
+      if (interactive) html += `<button aria-label="Rate ${i} star" class="btn btn-sm p-0 owner-rate-star" data-owner="${escapeHtml(ownerEmail)}" data-value="${i}" type="button" style="background:none;border:0;font-size:1.1rem;line-height:1;">${ i<=rounded ? '★' : '☆' }</button>`;
+      else html += `<span style="font-size:1.1rem;line-height:1;">${ i<=rounded ? '★' : '☆' }</span>`;
+    }
+    html += '</div>';
+    return html;
+  }
+  function ratingBlockHtmlFor(ownerEmail){
+    const meta = getRatingMeta(ownerEmail);
+    const avg = meta.avg||0; const count = meta.count||0;
+    const avgText = count ? String(avg) : '—';
+    const countText = count ? `(${count})` : '';
+    return `<div class="owner-rating-wrap small text-muted d-flex align-items-center" style="gap:8px;white-space:nowrap;">${ buildStarsHtml(avg,true,ownerEmail) }<span class="rating-info ms-1">${ escapeHtml(avgText) } ${ escapeHtml(countText) }</span></div>`;
+  }
+
+  // inject into owner cards (data-owner-email)
+  function injectRatingsIntoCards(){
+    const ownersList = document.getElementById('ownersList');
+    if (!ownersList) return;
+    const cards = ownersList.querySelectorAll('[data-owner-email]');
+    cards.forEach(card=>{
+      const email = card.getAttribute('data-owner-email') || '';
+      if (!email) return;
+      const body = card.querySelector('.card-body') || card;
+      if (!body) return;
+      let wrap = body.querySelector('.owner-rating-wrap') || body.querySelector('.owner-rating-container');
+      const html = ratingBlockHtmlFor(email);
+      if (wrap) wrap.outerHTML = `<div class="owner-rating-container mt-2">${html}</div>`;
+      else {
+        const anchor = body.querySelector('p.text-muted') || body.querySelector('h5');
+        const node = document.createElement('div'); node.className='owner-rating-container mt-2'; node.innerHTML = html;
+        if (anchor && anchor.parentNode === body) anchor.insertAdjacentElement('afterend', node);
+        else {
+          const action = body.querySelector('.mt-auto');
+          if (action) body.insertBefore(node, action); else body.appendChild(node);
+        }
+      }
+    });
+  }
+
+  // bind clicks on injected stars (delegated)
+  function bindRatingClicks(){
+    const ownersList = document.getElementById('ownersList');
+    if (!ownersList) return;
+    ownersList.addEventListener('click', function(ev){
+      const btn = ev.target.closest && ev.target.closest('.owner-rate-star');
+      if (!btn) return;
+      ev.preventDefault();
+      const owner = btn.dataset.owner;
+      const val = Number(btn.dataset.value);
+      if (!owner || !isFinite(val)) return;
+      if (!confirm(`Submit ${val} star rating for this owner?`)) return;
+      let opinion = '';
+      try { opinion = prompt('Optional: add a short opinion (Cancel to skip)') || ''; } catch(e){ opinion=''; }
+      const meta = addRatingForOwnerEmail(owner, val, opinion);
+      if (!meta) { alert('Failed to save rating'); return; }
+      // update owner record if present
+      try {
+        const loaded = loadUsersFromStorage();
+        const idx = (loaded.users||[]).findIndex(u => (u.email||'').toLowerCase() === (owner||'').toLowerCase());
+        if (idx !== -1) {
+          loaded.users[idx] = Object.assign({}, loaded.users[idx], { lastRating: val, ratingUpdatedAt: new Date().toISOString(), ratingAvg: meta.avg, ratingCount: meta.count });
+          saveUsersToStorage(loaded.key, loaded.users);
+        }
+      } catch(e){}
+      // update UI
+      injectRatingsIntoCards();
+      if (typeof showToast === 'function') showToast('Thanks for rating! ⭐','success'); else alert('Thanks for rating! ⭐');
+    });
+  }
+
+  // init cards feature (observe modifications)
+  function initOwnerRatingsCards(){
+    injectRatingsIntoCards();
+    bindRatingClicks();
+    const ownersList = document.getElementById('ownersList');
+    if (!ownersList) return;
+    const mo = new MutationObserver(() => {
+      if (window.__tailor_rating_inject_timer) clearTimeout(window.__tailor_rating_inject_timer);
+      window.__tailor_rating_inject_timer = setTimeout(() => injectRatingsIntoCards(), 150);
+    });
+    mo.observe(ownersList, { childList:true, subtree:true });
+  }
+
+  /* ---------- rating.html page connector ---------- */
+  function initRatingPageConnector(){
+    const ownerNameEl = document.getElementById('ownerName');
+    const ratingSelect = document.getElementById('rating');
+    const opinionEl = document.getElementById('opinion');
+    const messageEl = document.getElementById('message');
+    if (!ownerNameEl || !ratingSelect || !opinionEl || !messageEl) return;
+
+    // parse owner param
+    const url = new URL(window.location.href);
+    let ownerParam = url.searchParams.get('owner') || '';
+    try { ownerParam = decodeURIComponent(ownerParam); } catch(e){}
+
+    const { key: usersKey, users } = loadUsersFromStorage();
+    const ownerIndex = users.findIndex(u => (u.email||'').toLowerCase() === (ownerParam||'').toLowerCase());
+    const owner = ownerIndex !== -1 ? users[ownerIndex] : null;
+    ownerNameEl.innerText = owner ? (owner.name || owner.email || '') : (ownerParam || '(Unknown tailor)');
+
+    if (!owner) {
+      messageEl.innerHTML = `<div class="alert alert-warning">Owner not found. Cannot submit rating.</div>`;
+      const submit = document.querySelector('button[onclick="saveRating()"]');
+      if (submit) submit.disabled = true;
+      return;
+    }
+
+    // expose saveRating globally (used by your button)
+    window.saveRating = function(){
+      const r = Number(ratingSelect.value || 0);
+      const op = (opinionEl.value || '').trim();
+      if (!Number.isFinite(r) || r < 1 || r > 5) {
+        messageEl.innerHTML = `<div class="alert alert-warning">Please choose a valid rating (1–5).</div>`;
+        return;
+      }
+      const meta = addRatingForOwnerEmail(owner.email, r, op);
+      try {
+        users[ownerIndex] = Object.assign({}, users[ownerIndex], { lastRating: r, lastOpinion: op, ratingUpdatedAt: new Date().toISOString(), ratingAvg: meta.avg, ratingCount: meta.count });
+        saveUsersToStorage(usersKey, users);
+      } catch(e){ console.warn('update owner record failed', e); }
+      const avgText = meta ? `${meta.avg} (${meta.count})` : '—';
+      messageEl.innerHTML = `<div class="alert alert-success">Rating submitted successfully! <br><small>Current avg: ${escapeHtml(String(avgText))}</small></div>`;
+      opinionEl.value = '';
+      // refresh owner cards immediately
+      injectRatingsIntoCards();
+    };
+  }
+
+  /* ---------- auto-init ---------- */
+  if (document.readyState !== 'loading') {
+    initOwnerRatingsCards();
+    initRatingPageConnector();
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      initOwnerRatingsCards();
+      initRatingPageConnector();
+    });
+  }
+
+  /* expose API */
+  window.TailorRatings = {
+    addRatingForOwnerEmail,
+    getRatingMeta,
+    injectRatingsIntoCards
+  };
+
+  // helper functions used above that were declared later: implement them here to avoid hoisting issues
+  function loadUsersFromStorage() {
+    for (const k of USERS_KEYS) {
+      const raw = localStorage.getItem(k);
+      if (!raw) continue;
+      const parsed = safeParse(raw);
+      if (Array.isArray(parsed)) return { key: k, users: parsed };
+    }
+    return { key: USERS_KEYS[0], users: [] };
+  }
+  function saveUsersToStorage(key, users) { saveJson(key, users); }
+
+})();
+</script>
+
+
+
+<center>
+<a class="btn btn-outline-secondary" href="index.html">back</a>
+</center>
+
+
+</body>
+</html>

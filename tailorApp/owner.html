@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Owner — TailorApp</title>
+  <link rel="icon" href="tailor-icon-style_822882-217368.avif">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+  
+ <style>
+    /* Smooth card hover */
+    .card {
+      border-radius: 12px;
+      transition: all .25s ease;
+    }
+
+    .card:hover {
+      transform: scale(1.01);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    /* Modern headings */
+    h6 {
+      font-weight: 600;
+      letter-spacing: .4px;
+    }
+
+    /* Scrollbar style */
+    #trOpinionsList::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #trOpinionsList::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, .15);
+      border-radius: 10px;
+    }
+
+    /* Summary numbers */
+    .rating-summary-value {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #d19b3d;
+    }
+
+    /* Opinion text limit */
+    .text-truncate-2 {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: .95rem;
+      color: #555;
+    }
+  </style>
+  
+</head>
+
+<body class="bg-soft">
+
+  <nav class="navbar navbar-white bg-white shadow-sm py-2 animated-fadeIn">
+    <div class="container d-flex align-items-center gap-3">
+       <div class="dropdown">
+  <button class="btn btn-light fs-4 border-1" type="button" id="menuButton" data-bs-toggle="dropdown">
+    ☰
+  </button>
+
+  <ul class="dropdown-menu" id="menuList">
+    <!-- Filled by script automatically -->
+  </ul>
+</div>
+      <a class="navbar-brand fw-bold me-2" href="main.html">TailorApp</a>
+      <div class="ms-auto">
+        <a class="btn btn-outline-secondary" href="index.html">Home</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container my-4">
+    <div class="row gy-4">
+      <!-- Right: Dashboard -->
+      <div class="d-flex justify-content-center align-items-center vh-10 bg-light">
+        <div id="ownerDashboard" class="card shadow-sm d-none animated-pop" style="min-width:760px; max-width:100%;">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+              <h5 class="me-auto">
+                Owner Dashboard — Received Orders
+                <span id="ownerNameBadge" class="badge bg-primary ms-2" style="font-size:.85rem; display:none;"></span>
+                <small id="ownerEmailSmall" class="text-muted ms-2" style="font-size:.78rem; display:none;"></small>
+              </h5>
+
+              <!-- Upload + Logout area near top -->
+              <div class="me-3">
+                <input id="designFiles" type="file" accept="image/*,video/*" multiple class="form-control form-control-sm"
+                  style="width:220px; display:inline-block;">
+              </div>
+              <div class="me-2">
+                <button id="uploadDesignsBtn" class="btn btn-primary btn-sm">Upload</button>
+              </div>
+
+              <div class="me-3">
+                <input id="ownerSearch" class="form-control" placeholder="Search orders (name, phone, dress, address)">
+              </div>
+
+              <button id="ownerLogout" class="btn btn-outline-secondary">Logout</button>
+              <button id="deleteAccountBtn" class="btn btn-outline-danger ms-2">Delete Account</button>
+            </div>
+
+            <!-- FIX: Added missing dropdown for script.js to inject backup/restore menu -->
+            <div class="dropdown mb-3" id="backupDropdown">
+              <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="backupDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                Backup & Restore
+              </button>
+              <ul id="backupMenu" class="dropdown-menu" aria-labelledby="backupDropdownBtn">
+                <!-- script.js will populate backup/restore items here -->
+              </ul>
+            </div>
+
+            <!-- Ratings Viewer (read-only) -->
+            <div class="row gx-3">
+              <div class="col-md-6">
+                <!-- Designs gallery for the logged-in owner (private) -->
+                <div class="mb-3">
+                  <h6>Your Designs</h6>
+                  <div id="designsGallery" class="row gy-3">
+                    <!-- owner designs injected by script.js -->
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <!-- Ratings summary + list (VIEW ONLY) -->
+                <div id="ownerRatingsPanel" class="card mb-3 tr-rating-card">
+                  <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                      <div>
+                        <h6 class="mb-1">Customer Ratings & Opinions</h6>
+                        <div class="small text-muted">Average: <strong id="trAvg">—</strong> &nbsp; • &nbsp; Count: <strong id="trCount">0</strong></div>
+                      </div>
+                      <div>
+                        <button id="trRefreshBtn" class="btn btn-outline-btn-sm">Refresh</button>
+                      </div>
+                    </div>
+
+                    <div id="trOpinionsList" class="mt-3" style="max-height:300px; overflow:auto; padding-right:6px;">
+                      <div class="text-muted p-3">No ratings yet.</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Orders table -->
+                <div id="ordersContainer" class="card mb-3">
+                  <div class="card-body">
+                    <h6 class="mb-3">Orders</h6>
+                    <!-- orders injected by script.js -->
+                    <div class="text-muted">Loading orders...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <button id="clearAllBtn" class="btn btn-danger">Clear My Orders</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Not logged in message -->
+        <div id="notLogged" class="card shadow-sm animated-pop">
+          <div class="card-body">
+            <h5 class="card-title">Owner Access</h5>
+            <p class="text-muted">Please login or create an owner account to view received orders and your private designs.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Opinion modal -->
+  <div class="modal fade" id="trOpinionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 id="trOpinionModalTitle" class="modal-title">Opinion</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="trOpinionModalBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Safety snippet: guard against null-ref & provide fallback if script expects other selectors -->
+ <!-- Put this near end of body or inside owner.html / index pages -->
+<script>
+(function(){
+  'use strict';
+
+  const STORAGE_KEY = 'tailorOwnerRatings_v1';
+  const SESSION_OWNER_KEY = 'tailor_current_user'; // change if your login uses another key
+
+  /* ---------------- utilities ---------------- */
+  const safeParse = (s) => { try { return JSON.parse(s); } catch(e){ return null; } };
+  const saveMap = (m) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(m||{})); } catch(e){ console.error('saveMap', e); } };
+  const loadMap = () => safeParse(localStorage.getItem(STORAGE_KEY)) || {};
+  const escapeHtml = (s='') => String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const norm = (s='') => {
+    try { return decodeURIComponent(String(s)).trim().toLowerCase(); } catch(e){ return String(s||'').trim().toLowerCase(); }
+  };
+
+  /* detect owner email: sessionStorage preferred, fallback to data-owner-email attr */
+  function detectOwnerEmail() {
+    try {
+      const v = sessionStorage.getItem(SESSION_OWNER_KEY);
+      if (v) return norm(v);
+    } catch(e){}
+    const el = document.querySelector('[data-owner-email]');
+    if (el) {
+      const val = el.getAttribute('data-owner-email');
+      if (val) return norm(val);
+    }
+    // fallback - check some typical localStorage keys (optional)
+    try {
+      const fallbackKeys = ['tailor_current_user','currentUser','loggedInUser'];
+      for (const k of fallbackKeys) {
+        const vv = localStorage.getItem(k);
+        if (vv) return norm(vv);
+      }
+    } catch(e){}
+    return '';
+  }
+
+  /* compute meta for an owner (supports numeric legacy entries and rich objects) */
+  function computeMeta(email) {
+    if (!email) return {avg:0,count:0,raw:[]};
+    const map = loadMap();
+    const arr = Array.isArray(map[email]) ? map[email] : [];
+    let sum = 0, count = 0;
+    for (const it of arr) {
+      if (it == null) continue;
+      if (typeof it === 'number' || isFinite(it)) { sum += Number(it); count++; }
+      else if (typeof it === 'object' && isFinite(it.rating)) { sum += Number(it.rating); count++; }
+    }
+    const avg = count ? Math.round((sum/count) * 10) / 10 : 0;
+    return { avg, count, raw: arr };
+  }
+
+  function starsHtml(n) {
+    const m = Math.round(Number(n)||0);
+    let s = '';
+    for (let i=1;i<=5;i++) s += (i<=m ? '★' : '☆');
+    return `<span style="color:#f1c40f; font-size:1rem; line-height:1;">${s}</span>`;
+  }
+
+  function formatWhen(iso) {
+    if (!iso) return '—';
+    try { return new Date(iso).toLocaleString(); } catch (e) { return iso; }
+  }
+
+  /* Render ratings panel (main) */
+  function renderRatingsPanel(ownerEmail) {
+    const panel = document.getElementById('ownerRatingsPanel');
+    if (!panel) return console.warn('ownerRatingsPanel not found on page');
+
+    const avgEl = panel.querySelector('#trAvg');
+    const cntEl = panel.querySelector('#trCount');
+    const listEl = panel.querySelector('#trOpinionsList');
+    const refreshBtn = panel.querySelector('#trRefreshBtn');
+
+    if (!avgEl || !cntEl || !listEl) {
+      console.warn('Required elements (#trAvg, #trCount, #trOpinionsList) missing');
+      return;
+    }
+
+    ownerEmail = norm(ownerEmail || detectOwnerEmail());
+    if (!ownerEmail) {
+      avgEl.textContent = '—';
+      cntEl.textContent = '0';
+      listEl.innerHTML = '<div class="text-muted p-3">No owner selected.</div>';
+      if (refreshBtn) refreshBtn.disabled = true;
+      return;
+    }
+    if (refreshBtn) refreshBtn.disabled = false;
+
+    const meta = computeMeta(ownerEmail);
+    avgEl.textContent = meta.count ? String(meta.avg) : '—';
+    cntEl.textContent = String(meta.count || 0);
+
+    const arr = Array.isArray(meta.raw) ? meta.raw : [];
+    if (!arr.length) {
+      listEl.innerHTML = '<div class="text-muted p-3">No ratings yet.</div>';
+      return;
+    }
+
+    // show most-recent-first; for delete we need original index -> origIndex = arr.length - 1 - revIdx
+    const items = [];
+    for (let revIdx = 0; revIdx < arr.length; revIdx++) {
+      // reversed index mapping:
+      const origIndex = arr.length - 1 - revIdx;
+      const it = arr[origIndex];
+      if (it == null) continue;
+      let rating = 0, opinion = '', at = null;
+      if (typeof it === 'number' || isFinite(it)) { rating = Number(it); }
+      else if (typeof it === 'object' && isFinite(it.rating)) { rating = Number(it.rating); opinion = it.opinion || ''; at = it.at || null; }
+      items.push({ rating, opinion, at, origIndex });
+    }
+
+    // build html
+    const html = items.map(it => {
+      const opHtml = it.opinion ? `<div class="small text-muted mb-1 text-truncate-2">${escapeHtml(it.opinion)}</div>` : '';
+      return `<div class="border-bottom py-2 px-1 d-flex justify-content-between align-items-start">
+        <div>
+          <div>${starsHtml(it.rating)} <small class="text-muted">(${escapeHtml(String(it.rating))})</small></div>
+          ${opHtml}
+          <div class="small text-muted">${escapeHtml(formatWhen(it.at))}</div>
+        </div>
+        <div class="ms-2 text-end">
+          <button class="btn btn-sm btn-outline-danger owner-delete-rating" data-owner="${escapeHtml(ownerEmail)}" data-orig-index="${it.origIndex}">Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+    listEl.innerHTML = html;
+  }
+
+  /* handlers: deletion & refresh */
+  function attachPanelHandlers() {
+    const panel = document.getElementById('ownerRatingsPanel');
+    if (!panel) return;
+    panel.addEventListener('click', (ev) => {
+      const del = ev.target.closest && ev.target.closest('.owner-delete-rating');
+      if (del && panel.contains(del)) {
+        ev.preventDefault();
+        const owner = norm(del.getAttribute('data-owner') || '');
+        const idx = Number(del.getAttribute('data-orig-index'));
+        if (!owner || !Number.isFinite(idx)) return;
+        if (!confirm('Delete this rating?')) return;
+        const map = loadMap();
+        const arr = Array.isArray(map[owner]) ? map[owner] : [];
+        if (idx < 0 || idx >= arr.length) return;
+        arr.splice(idx, 1);
+        map[owner] = arr;
+        saveMap(map);
+        renderRatingsPanel(owner);
+        if (typeof showToast === 'function') showToast('Rating deleted', 'warning');
+        return;
+      }
+
+      const refresh = ev.target.closest && ev.target.closest('#trRefreshBtn');
+      if (refresh && panel.contains(refresh)) {
+        ev.preventDefault();
+        renderRatingsPanel(detectOwnerEmail());
+        if (typeof showToast === 'function') showToast('Ratings refreshed', 'info');
+        return;
+      }
+    });
+  }
+
+  /* listen to storage events (updates from other tabs) */
+  function attachStorageListener() {
+    window.addEventListener('storage', (ev) => {
+      if (!ev.key) return;
+      if (ev.key !== STORAGE_KEY) return;
+      // re-render current owner's panel
+      renderRatingsPanel(detectOwnerEmail());
+    });
+  }
+
+  /* public helper to add a rating (used by rating page) */
+  function addRatingEntry(ownerEmail, rating, opinion) {
+    ownerEmail = norm(ownerEmail || detectOwnerEmail());
+    if (!ownerEmail) return false;
+    const r = Math.round(Number(rating) || 0);
+    if (!isFinite(r) || r < 1 || r > 5) return false;
+    const map = loadMap();
+    if (!Array.isArray(map[ownerEmail])) map[ownerEmail] = [];
+    map[ownerEmail].push({ rating: r, opinion: String(opinion || ''), at: new Date().toISOString() });
+    saveMap(map);
+    // immediate update for same-tab
+    renderRatingsPanel(ownerEmail);
+    return true;
+  }
+
+  /* init */
+  function init() {
+    attachPanelHandlers();
+    attachStorageListener();
+    renderRatingsPanel(detectOwnerEmail());
+    // expose helpers for console or other pages
+    window.addRatingEntry = addRatingEntry;
+    window.renderRatingsPanel = renderRatingsPanel;
+  }
+
+  if (document.readyState !== 'loading') init(); else document.addEventListener('DOMContentLoaded', init);
+
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+
+  // Create preview modal once
+  function ensureDesignPreviewModal() {
+    if (document.getElementById('designPreviewModal')) return;
+    const html = `
+      <div class="modal fade" id="designPreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 id="designPreviewTitle" class="modal-title"></h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div id="designPreviewBody" class="modal-body text-center p-3" style="min-height:200px">
+              <!-- injected -->
+            </div>
+          </div>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+  }
+
+  // Open preview: type = 'image'|'video'
+  function openDesignPreview(type, src, title = '') {
+    ensureDesignPreviewModal();
+    const modalEl = document.getElementById('designPreviewModal');
+    const body = document.getElementById('designPreviewBody');
+    const titleEl = document.getElementById('designPreviewTitle');
+    if (!modalEl || !body) { window.open(src, '_blank'); return; }
+    titleEl.textContent = title || '';
+    body.innerHTML = '';
+
+    if ((type||'').toLowerCase() === 'video') {
+      const v = document.createElement('video');
+      v.src = src;
+      v.controls = true;
+      v.autoplay = true;
+      v.style.maxWidth = '100%';
+      v.style.maxHeight = '80vh';
+      v.setAttribute('playsinline','');
+      body.appendChild(v);
+    } else {
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = title || '';
+      img.style.maxWidth = '100%';
+      img.style.maxHeight = '80vh';
+      img.loading = 'lazy';
+      body.appendChild(img);
+    }
+
+    // show via bootstrap
+    try {
+      const bsModal = new bootstrap.Modal(modalEl, { keyboard: true });
+      bsModal.show();
+    } catch (e) {
+      // fallback
+      window.open(src, '_blank');
+    }
+  }
+
+  // Delegated click/pointer handler for thumbs
+  function bindDesignPreviewClicks() {
+    // prefer ownersList container if exists to reduce search scope
+    const root = document.getElementById('ownersList') || document;
+    // use pointerup to be friendly for touch; click as fallback
+    root.addEventListener('pointerup', handler, { passive: true });
+    root.addEventListener('click', handler, { passive: true });
+
+    function handler(ev) {
+      const target = ev.target;
+      // check nearest element that is a thumb wrapper or an <img> inside it
+      const thumb = target.closest && target.closest('.owner-design-thumb, img.owner-design-thumb, .owner-design-thumb img, .owner-design-thumb video');
+      if (!thumb) return;
+      ev.preventDefault();
+
+      // find element that actually has the preview data or src
+      let el = thumb;
+      if (el.tagName.toLowerCase() !== 'img' && el.tagName.toLowerCase() !== 'video') {
+        // prefer direct img/video child
+        const inside = el.querySelector('img,video');
+        if (inside) el = inside;
+      }
+
+      const type = (el.dataset.previewType || el.getAttribute('data-preview-type') || (el.tagName.toLowerCase() === 'video' ? 'video' : 'image')).toLowerCase();
+      const src = el.dataset.previewSrc || el.getAttribute('data-preview-src') || el.src || el.getAttribute('src') || '';
+      const title = el.dataset.previewTitle || el.getAttribute('data-preview-title') || el.alt || el.title || '';
+
+      if (!src) return;
+      openDesignPreview(type === 'video' ? 'video' : 'image', src, title);
+    }
+  }
+
+  // Make thumbnails keyboard accessible and give pointer cursor style (optional)
+  function tidyDesignThumbs() {
+    const css = `.owner-design-thumb { cursor: pointer; } .owner-design-thumb img, .owner-design-thumb video { cursor: pointer; }`;
+    const s = document.createElement('style'); s.appendChild(document.createTextNode(css)); document.head.appendChild(s);
+    // ensure thumbnails have appropriate attributes when created by script rendering
+    document.querySelectorAll('.owner-design-thumb img:not([tabindex])').forEach(img => img.setAttribute('tabindex', '0'));
+    document.querySelectorAll('.owner-design-thumb:not([role])').forEach(el => el.setAttribute('role','button'));
+  }
+
+  // init on DOM ready and observe changes so newly-inserted thumbs are active
+  function init() {
+    ensureDesignPreviewModal();
+    bindDesignPreviewClicks();
+    tidyDesignThumbs();
+
+    // watch for new thumbnails added (so you don't need to rebind)
+    const list = document.getElementById('ownersList');
+    if (!list) return;
+    const mo = new MutationObserver(() => {
+      tidyDesignThumbs(); // ensure attributes applied
+    });
+    mo.observe(list, { childList: true, subtree: true });
+  }
+
+  if (document.readyState !== 'loading') init(); else document.addEventListener('DOMContentLoaded', init);
+
+  // expose for debug
+  window.openDesignPreview = openDesignPreview;
+
+})();
+</script>
+
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- App script (your existing script which handles users/orders/backups) -->
+  <script src="script.js"></script>
+</body>
+
+</html>

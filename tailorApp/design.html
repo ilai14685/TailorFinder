@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Owner Designs — TailorApp</title>
+  <link rel="icon" href="tailor-icon-style_822882-217368.avif">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
+  <style>
+    :root{
+      --thumb-h: 220px;    /* increase this to make boxes larger */
+      --card-pad: 12px;
+      --card-radius: 14px;
+    }
+
+    body { background: #f6f7fa; }
+
+    /* Card layout */
+    .design-card {
+      border-radius: var(--card-radius);
+      overflow: hidden;
+      transition: transform .18s ease, box-shadow .18s ease;
+      cursor: pointer;
+      background: #fff;
+      padding: var(--card-pad);
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      height: 100%;
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    .design-card:focus { outline: 3px solid rgba(13,110,253,0.12); outline-offset: 2px; }
+
+    .design-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 18px 40px rgba(14,28,45,0.08);
+    }
+
+    /* Larger thumbnail */
+    .design-thumb {
+      width: 100%;
+      height: var(--thumb-h);
+      object-fit: cover;
+      display: block;
+      border-radius: 10px;
+      background: linear-gradient(180deg,#f3f4f6,#ffffff);
+    }
+
+    .design-title {
+      font-weight: 700;
+      text-align: center;
+      font-size: .98rem;
+      color: #222;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* small meta area under title */
+    .design-meta {
+      font-size: .85rem;
+      color: #666;
+      text-align: center;
+    }
+
+    .gallery-row { gap: 1rem; }
+
+    .no-designs { min-height: var(--thumb-h); display:flex; align-items:center; justify-content:center; color:#666; }
+
+    /* responsive tweaks: fewer columns on large screens -> bigger cards */
+    @media (min-width: 992px) {
+      /* optional: increase thumbnail slightly on very large screens */
+      :root { --thumb-h: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container my-4">
+    <h3 class="mb-4 text-center" id="ownerTitle">Owner Designs</h3>
+
+    <!-- NOTE: row-cols set to show larger cards (1 / 2 / 2 / 3 cols). Adjust row-cols-lg / xl as needed -->
+    <div id="designsGallery" class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 gallery-row">
+      <!-- Designs injected here -->
+    </div>
+
+    <div class="text-center mt-3">
+      <a href="index.html" class="btn btn-outline-secondary">Back</a>
+    </div>
+  </div>
+
+  <!-- Design Preview Modal -->
+  <div class="modal fade" id="designPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 id="designPreviewTitle" class="modal-title"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div id="designPreviewBody" class="modal-body text-center p-3" style="min-height:200px"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    (function () {
+      // placeholder SVG for broken images
+      const PLACEHOLDER_SVG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520">
+          <rect width="100%" height="100%" fill="#f3f4f6"/>
+          <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#9aa2ad" font-size="20">Image not available</text>
+        </svg>`);
+
+      function log(...args){ if (window.console) console.log(...args); }
+
+      function getQueryParam(name) {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const raw = params.get(name);
+          return raw ? decodeURIComponent(raw) : null;
+        } catch (e) { return null; }
+      }
+
+      function loadDesignsFromStorage() {
+        try {
+          const raw = localStorage.getItem('tailorDesigns_v1') || localStorage.getItem('designs') || '[]';
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (e) { console.warn('loadDesignsFromStorage parse error', e); return []; }
+      }
+
+      function openDesignPreview(type, src, title) {
+        const modalEl = document.getElementById('designPreviewModal');
+        const body = document.getElementById('designPreviewBody');
+        const titleEl = document.getElementById('designPreviewTitle');
+        if (!modalEl || !body) { window.open(src, '_blank'); return; }
+        titleEl.textContent = title || '';
+        body.innerHTML = '';
+
+        if ((type || '').toLowerCase() === 'video') {
+          const v = document.createElement('video');
+          v.src = src;
+          v.controls = true;
+          v.autoplay = true;
+          v.style.maxWidth = '100%';
+          v.style.maxHeight = '80vh';
+          v.setAttribute('playsinline', '');
+          body.appendChild(v);
+        } else {
+          const img = document.createElement('img');
+          img.src = src;
+          img.alt = title || '';
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '80vh';
+          img.loading = 'lazy';
+          img.onerror = () => { img.src = PLACEHOLDER_SVG; };
+          body.appendChild(img);
+        }
+
+        try {
+          const bs = new bootstrap.Modal(modalEl, { keyboard: true });
+          bs.show();
+        } catch (err) {
+          window.open(src, '_blank');
+        }
+      }
+
+      // Render gallery keeping cards equal height and keyboard accessible
+      function renderGalleryForOwner(ownerEmail) {
+        const gallery = document.getElementById('designsGallery');
+        const ownerTitle = document.getElementById('ownerTitle');
+        ownerTitle.textContent = ownerEmail ? `${ownerEmail} Designs` : 'Owner Designs';
+
+        const allDesigns = loadDesignsFromStorage();
+        const list = ownerEmail ? allDesigns.filter(d => (d.owner || '').toLowerCase() === ownerEmail.toLowerCase()) : allDesigns;
+
+        if (!list.length) {
+          gallery.innerHTML = `<div class="col-12"><div class="no-designs alert alert-info mb-0">No designs found for this owner.</div></div>`;
+          return;
+        }
+
+        gallery.innerHTML = '';
+        list.forEach(d => {
+          const col = document.createElement('div');
+          col.className = 'col';
+
+          const card = document.createElement('div');
+          card.className = 'design-card h-100';
+          card.setAttribute('role','button');
+          card.setAttribute('tabindex','0');
+
+          const title = (d.title || '').toString();
+          const src = (d.data || d.src || d.url || '') || '';
+
+          // image or video
+          if ((d.type || '').toLowerCase() === 'video') {
+            const wrap = document.createElement('div');
+            wrap.style.position = 'relative';
+            wrap.style.height = 'var(--thumb-h)';
+            wrap.style.overflow = 'hidden';
+            wrap.style.borderRadius = '10px';
+            wrap.style.background = '#000';
+            const poster = d.poster || '';
+            if (poster) {
+              const img = document.createElement('img');
+              img.className = 'design-thumb';
+              img.src = poster;
+              img.alt = title;
+              img.onerror = () => img.src = PLACEHOLDER_SVG;
+              wrap.appendChild(img);
+            } else {
+              const placeholder = document.createElement('div');
+              placeholder.style.width = '100%';
+              placeholder.style.height = '100%';
+              placeholder.style.display = 'flex';
+              placeholder.style.alignItems = 'center';
+              placeholder.style.justifyContent = 'center';
+              placeholder.style.color = '#fff';
+              placeholder.style.fontSize = '2rem';
+              placeholder.textContent = '▶';
+              wrap.appendChild(placeholder);
+            }
+            card.appendChild(wrap);
+            card.addEventListener('click', () => openDesignPreview('video', src, title));
+            card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDesignPreview('video', src, title); }});
+          } else {
+            const img = document.createElement('img');
+            img.className = 'design-thumb';
+            img.src = src || PLACEHOLDER_SVG;
+            img.alt = title;
+            img.loading = 'lazy';
+            img.onerror = () => img.src = PLACEHOLDER_SVG;
+            card.appendChild(img);
+            card.addEventListener('click', () => openDesignPreview('image', src, title));
+            card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDesignPreview('image', src, title); }});
+          }
+
+          const t = document.createElement('div');
+          t.className = 'design-title';
+          t.textContent = title || 'Untitled';
+
+          const meta = document.createElement('div');
+          meta.className = 'design-meta';
+          meta.textContent = d.owner ? d.owner : '';
+
+          // push title/meta to bottom neatly: we already used flex column on card so append
+          card.appendChild(t);
+          card.appendChild(meta);
+
+          col.appendChild(card);
+          gallery.appendChild(col);
+        });
+      }
+
+      // Init
+      document.addEventListener('DOMContentLoaded', () => {
+        try {
+          const ownerParam = getQueryParam('owner');
+          renderGalleryForOwner(ownerParam);
+        } catch (err) {
+          console.error('render error', err);
+          document.getElementById('designsGallery').innerHTML = '<div class="col-12"><div class="alert alert-danger">Failed to load designs. Check console.</div></div>';
+        }
+      });
+
+      // Expose helpers
+      window.openDesignPreview = openDesignPreview;
+      window.loadDesignsFromStorage = loadDesignsFromStorage;
+    })();
+  </script>
+</body>
+</html>
